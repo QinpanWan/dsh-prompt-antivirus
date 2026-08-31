@@ -78,3 +78,13 @@ cd plugins/dsh-prompt-antivirus && node --test
 
 签名扫描是「打地鼠」：能可靠命中已知措辞，改写后的攻击可能漏过。请配合最小权限工具集与危险操作人工确认
 （本插件默认对高危 + 危险工具走审批通道）。真正的预防是架构性的——本插件是其中一层，不是银弹。
+
+## 更新记录
+
+- **2026-08-31 v0.1.1**：首个正式版（含可演进签名库），随 `QinpanWan/dsh-harmonyos-pc` 分发——`plugins/dsh-prompt-antivirus` + 一键安装脚本 `scripts/dsh-prompt-antivirus-install.mjs`（幂等，web + headless 双 profile）+ `dsh-hm-update.mjs` 自动部署：
+  - 四道钩子防线：`tools/pre-execute` 扫工具参数（高危拒绝、危险工具人工审批）、`tools/post-execute` 扫工具结果（block / quarantine）、`agent/pre-step` 扫进入模型前的消息 + 每会话一次金丝雀守卫、`llm/stream` 出站消毒与金丝雀命中中断
+  - 三模式：`quarantine`（默认）/ `block` / `monitor`；危险工具高危命中走人工审批
+  - 病毒库磁盘化：`rules/virus-signatures.json`（可用 `PROMPT_ANTIVIRUS_RULES_PATH` 覆盖），`_antivirus_learn` / `_antivirus_rules_export` / `_antivirus_rules_import` 运行时热更新，无需重启
+  - 审计落盘 `~/.dsh/task-board/prompt-antivirus-audit.jsonl`（环形 500 条 + 文件上限 2MB，失败静默）
+  - 44 项单测 + harness 全绿
+- **2026-08-31 修复**：工具 schema `category.required` 建会话时触发 `JsonSchemaError`（`required` 只能为 true，省略该字段；rule 补 `additionalProperties:false` 校验）；守卫消息补充 source 插件来源元数据，审计可溯源
